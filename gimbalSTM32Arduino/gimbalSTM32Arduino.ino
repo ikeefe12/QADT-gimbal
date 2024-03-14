@@ -10,7 +10,7 @@
 #define USING_MICROS_RESOLUTION       true    //false 
 
 #include "STM32_PWM.h"
-#include <SimpleFOC.h>
+#include "MagneticSensorI2C.h"
 #include <HardwareSerial.h>
 
 #define LED_ON        LOW
@@ -27,10 +27,19 @@
 /////////////////////////////////////////////////
 // SERIAL / I2C
 HardwareSerial Serial3(PA10, PA9); // RX, TX
-MagneticSensorI2C as5600 = MagneticSensorI2C(AS5600_I2C);
-float as5600Offset = 0;
+MagneticSensorI2C as5600 = MagneticSensorI2C();
+// float as5600Offset = 0;
 
 /////////////////////////////////////////////////
+
+// I2C PINS
+// I2C 1 is located next to LEDs on STorM32
+// I2C 1 Used for IMU and Magnetic encoder #1
+#define I2C_SCL_1 PB10
+#define I2C_SDA_1 PB11
+// I2C 2 Used for Magnetic encoder #2
+#define I2C_SCL_2 PB6
+#define I2C_SDA_2 PB7
 
 // Change the pin according to your STM32 board. There is no single definition for all boards.
 #define motor0Poles    14
@@ -94,7 +103,7 @@ void setup()
 {
   // INITIALIZE COMMUNICATION
   Serial3.begin(9600);
-  as5600.init();
+  as5600.init(I2C_SDA_2, I2C_SCL_2);
 
   pinMode(LED_0, OUTPUT);
   pinMode(LED_1, OUTPUT);
@@ -163,9 +172,9 @@ void setup()
 
   delay(100);
   
-  as5600.update();
+  // as5600.update();
 
-  as5600Offset = as5600.getAngle();
+  // as5600Offset = as5600.getAngle();
 }
 
 void loop()
@@ -173,7 +182,7 @@ void loop()
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600.update();
-  float rotorAngle = as5600.getAngle() - as5600Offset;
+  float rotorAngle = as5600.getAngle(); // - as5600Offset;
   // display the angle and the angular velocity to the terminal
   Serial3.print(rotorAngle);
   Serial3.print("\t\n");
