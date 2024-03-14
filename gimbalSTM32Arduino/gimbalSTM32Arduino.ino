@@ -10,8 +10,9 @@
 #define USING_MICROS_RESOLUTION       true    //false 
 
 #include "STM32_PWM.h"
-#include "MagneticSensorI2C.h"
+#include <Wire.h>
 #include <HardwareSerial.h>
+#include "MagneticSensorI2C.h"
 
 #define LED_ON        LOW
 #define LED_OFF       HIGH
@@ -27,8 +28,10 @@
 /////////////////////////////////////////////////
 // SERIAL / I2C
 HardwareSerial Serial3(PA10, PA9); // RX, TX
-MagneticSensorI2C as5600 = MagneticSensorI2C();
-// float as5600Offset = 0;
+TwoWire i2c_1;
+TwoWire i2c_2;
+int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
+#define MPU_addr 0x68
 
 /////////////////////////////////////////////////
 
@@ -48,6 +51,12 @@ MagneticSensorI2C as5600 = MagneticSensorI2C();
 #define motor0C    PA7
 
 //////////////////////////////////////////////////////
+
+// SENSOR CLASSES
+MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
+MagneticSensorI2C as5600_roll = MagneticSensorI2C();
+
+/////////////////////////////////////////////////////
 
 // motor0 Pins  ============>> TimerIndex = 1, 0, 3
 uint32_t pins[]       = { motor0A, motor0B, motor0C };
@@ -103,7 +112,18 @@ void setup()
 {
   // INITIALIZE COMMUNICATION
   Serial3.begin(9600);
-  as5600.init(I2C_SDA_2, I2C_SCL_2);
+
+  // I2C communication begin with proper pins
+  i2c_1.begin(uint32_t(I2C_SDA_1), uint32_t(I2C_SCL_1));
+  i2c_2.begin(uint32_t(I2C_SDA_2), uint32_t(I2C_SCL_2));
+
+  // Set up Encoder Sensors
+  as5600_pitch.init(&i2c_2);
+
+  i2c_2.beginTransmission(MPU_addr);
+  i2c_2.write(0x6B);  // PWR_MGMT_1 register
+  i2c_2.write(0);     // set to zero (wakes up the MPU-6050)
+  i2c_2.endTransmission(true);
 
   pinMode(LED_0, OUTPUT);
   pinMode(LED_1, OUTPUT);
@@ -171,20 +191,34 @@ void setup()
   }
 
   delay(100);
-  
-  // as5600.update();
-
-  // as5600Offset = as5600.getAngle();
 }
 
 void loop()
 {
   // IMPORTANT - call as frequently as possible
   // update the sensor values
-  as5600.update();
-  float rotorAngle = as5600.getAngle(); // - as5600Offset;
+  float rotorAngle = as5600_pitch.getSensorAngle(); // - as5600Offset;
   // display the angle and the angular velocity to the terminal
   Serial3.print(rotorAngle);
   Serial3.print("\t\n");
+
+  i2c_2.beginTransmission(MPU_addr);
+  i2c_2.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+  i2c_2.endTransmission(false);
+  i2c_2.requestFrom(MPU_addr,14,true);  // request a total of 14 registers
+  AcX=i2c_2.read()<<8|i2c_2.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)    
+  AcY=i2c_2.read()<<8|i2c_2.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+  AcZ=i2c_2.read()<<8|i2c_2.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+  Tmp=i2c_2.read()<<8|i2c_2.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
+  GyX=i2c_2.read()<<8|i2c_2.read();  // 0x43 (GYRO_XOUT_H) & 0x44 (GYRO_XOUT_L)
+  GyY=i2c_2.read()<<8|i2c_2.read();  // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
+  GyZ=i2c_2.read()<<8|i2c_2.read();  // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
+  Serial3.print("AcX = "); Serial3.print(AcX);
+  Serial3.print(" | AcY = "); Serial3.print(AcY);
+  Serial3.print(" | AcZ = "); Serial3.print(AcZ);
+  Serial3.print(" | Tmp = "); Serial3.print(Tmp/340.00+36.53);  //equation for temperature in degrees C from datasheet
+  Serial3.print(" | GyX = "); Serial3.print(GyX);
+  Serial3.print(" | GyY = "); Serial3.print(GyY);
+  Serial3.print(" | GyZ = "); Serial3.println(GyZ);
   delay(10);
 }

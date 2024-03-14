@@ -29,11 +29,11 @@ class MagneticSensorI2C {
     MagneticSensorI2C();
         
     /** sensor initialise pins */
-    void init(uint32_t sdaPin, uint32_t sclPin, TwoWire* _wire = &Wire);
+    void init(TwoWire* _wire);
 
-    void update();
+    //void update();
 
-    float getAngle();
+    // float getAngle();
 
     // implementation of abstract functions of the Sensor class
     /** get current angle (rad) */

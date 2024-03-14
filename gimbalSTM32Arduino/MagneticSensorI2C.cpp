@@ -47,28 +47,21 @@ MagneticSensorI2C::MagneticSensorI2C(){
   wire = &Wire;
 }
 
-void MagneticSensorI2C::update() {
-    float val = getSensorAngle();
-    if (val<0) // sensor angles are strictly non-negative. Negative values are used to signal errors.
-         return;
-    angle_prev = val;
-}
+// void MagneticSensorI2C::update() {
+//     float val = getSensorAngle();
+//     if (val<0) // sensor angles are strictly non-negative. Negative values are used to signal errors.
+//          return;
+//     angle_prev = val;
+// }
 
-float MagneticSensorI2C::getAngle(){
-    return angle_prev;
-}
+// float MagneticSensorI2C::getAngle(){
+//     return angle_prev;
+// }
 
-void MagneticSensorI2C::init(uint32_t sdaPin, uint32_t sclPin, TwoWire* _wire){
+void MagneticSensorI2C::init(TwoWire* _wire){
   wire = _wire;
-
-  // I2C communication begin
-  wire->begin(sdaPin, sclPin);
-
-  // initialize all the internal variables of Sensor to ensure a "smooth" startup (without a 'jump' from zero)
-  update(); // call once
   getSensorAngle(); // call once
   delayMicroseconds(1);
-  update();
   angle_prev = getSensorAngle(); // call again
 }
 
@@ -78,8 +71,6 @@ float MagneticSensorI2C::getSensorAngle(){
   // (number of full rotations)*2PI + current sensor angle 
   return  ( getRawCount() / (float)cpr) * _2PI ;
 }
-
-
 
 // function reading the raw counter of the magnetic sensor
 int MagneticSensorI2C::getRawCount(){
