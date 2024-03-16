@@ -60,16 +60,34 @@ MagneticSensorI2C::MagneticSensorI2C(){
 
 void MagneticSensorI2C::init(TwoWire* _wire){
   wire = _wire;
-  getSensorAngle(); // call once
-  delayMicroseconds(1);
-  angle_prev = getSensorAngle(); // call again
+  update();
+  delay(100);
+  update();
+  offset = mechanicalAngle;
+  update();
+}
+
+void MagneticSensorI2C::update() {
+  float tmp = ((getRawCount() / (float)cpr) * _2PI) - offset;
+
+  if (tmp < 0) {
+    tmp += _2PI;
+  }
+
+  mechanicalAngle = tmp;
 }
 
 //  Shaft angle calculation
 //  angle is in radians [rad]
-float MagneticSensorI2C::getSensorAngle(){
+float MagneticSensorI2C::getMechanicalAngle(){
   // (number of full rotations)*2PI + current sensor angle 
-  return  ( getRawCount() / (float)cpr) * _2PI ;
+  return mechanicalAngle;
+}
+
+//  Electrical angle calculation
+//  angle is in radians [rad] 
+float MagneticSensorI2C::getElectricalAngle() {
+  return fmod(mechanicalAngle * numPolePairs, _2PI);
 }
 
 // function reading the raw counter of the magnetic sensor
