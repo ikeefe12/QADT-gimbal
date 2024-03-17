@@ -1,6 +1,6 @@
 #include "MotorPWM.h"
 
-uint32_t freq = 100;
+uint32_t freq = 100000;
 HardwareSerial Serial3 = HardwareSerial(PA10, PA9); // RX, TX
 
 // Constructor
@@ -33,11 +33,11 @@ void MOTOR_PWM::setup() {
       channels[index] = STM_PIN_CHANNEL(pinmap_function( pinNameToUse, PinMap_PWM));
       timers[index] = new HardwareTimer(Instance);
       timers[index]->setMode(channels[index], TIMER_OUTPUT_COMPARE_PWM1, pins[index]);
-      if (index == 0) {
-        timers[index]->setOverflow(freq, TICK_FORMAT);
-      }
+      // if (index == 0) {
+      timers[index]->setOverflow(freq, HERTZ_FORMAT);
+      // }
       
-      timers[index]->setCaptureCompare(channels[index], dutyCycles[index], PERCENT_COMPARE_FORMAT);
+      timers[index]->setCaptureCompare(channels[index], dutyCycles[index], RESOLUTION_16B_COMPARE_FORMAT);
 
       timers[index]->resumeChannel(channels[index]);
       
@@ -63,7 +63,7 @@ void MOTOR_PWM::updateDutyCycle(uint32_t motorIndex) {
         // Apply the new duty cycle using the setCaptureCompare method
         // Assuming the dutyCycle is given in a format compatible with the expected compare format
         // timers[motorIndex]->pauseChannel(channels[motorIndex]);
-        timers[motorIndex]->setCaptureCompare(channels[motorIndex], dutyCycles[motorIndex], PERCENT_COMPARE_FORMAT);
+        timers[motorIndex]->setCaptureCompare(channels[motorIndex], dutyCycles[motorIndex], RESOLUTION_16B_COMPARE_FORMAT);
         // timers[motorIndex]->resumeChannel(channels[motorIndex]);
     } else {
         // Handle the case where the timer hasn't been initialized
@@ -75,34 +75,31 @@ void MOTOR_PWM::move(float electricalAngle) {
     float dutyCycleA, dutyCycleB, dutyCycleC;
     float halfRange = float(maximumPWMDutyCycle / 2.0);
 
+    float temp = electricalAngle - M_PI / 2.25;
+
+    Serial3.println(electricalAngle);
+
     // Phase A - no additional phase shift
-    float sinA = sin(electricalAngle);
+    float sinA = sin(temp);
+    float sinC = sin(temp + (2.0 * M_PI / 3.0));
+    float sinB = sin(temp + (4.0 * M_PI / 3.0));
+
     dutyCycleA = sinA * halfRange + halfRange;
-    Serial3.print(dutyCycleA);
-    Serial3.print("\t");
-
-    // Phase B - 120 degrees phase-shifted
-    float sinB = sin(electricalAngle + (2.0 * M_PI / 3.0));
+    
     dutyCycleB = sinB * halfRange + halfRange ;
-    Serial3.print(dutyCycleB);
-    Serial3.print("\t");
-
-    // Phase C - 240 degrees phase-shifted
-    float sinC = sin(electricalAngle + (4.0 * M_PI / 3.0));
+    
     dutyCycleC = sinC * halfRange + halfRange;
-    Serial3.print(dutyCycleC);
-    Serial3.print("\t\n");
     
     // Convert float duty cycles to integer if required by updateDutyCycle method
     uint32_t intDutyCycleA = static_cast<uint32_t>(dutyCycleA);
     uint32_t intDutyCycleB = static_cast<uint32_t>(dutyCycleB);
     uint32_t intDutyCycleC = static_cast<uint32_t>(dutyCycleC);
 
-    Serial3.print(intDutyCycleA);
+    Serial3.print(sinA);
     Serial3.print("\t");
-    Serial3.print(intDutyCycleB);
+    Serial3.print(sinB);
     Serial3.print("\t");
-    Serial3.print(intDutyCycleC);
+    Serial3.print(sinC);
     Serial3.print("\t\n");
 
     dutyCycles[0] = intDutyCycleA;

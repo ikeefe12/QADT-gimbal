@@ -38,9 +38,9 @@ int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 #define I2C_SDA_2 PB7
 
 // Change the pin according to your STM32 board. There is no single definition for all boards
-#define motor0A    PB1
-#define motor0B    PB0
-#define motor0C    PA7
+#define motor0A    PA6
+#define motor0B    PA3
+#define motor0C    PA2
 
 MOTOR_PWM motor0 = MOTOR_PWM(motor0A, motor0B, motor0C);
 
@@ -84,11 +84,15 @@ void loop()
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
-  float mechanicalAngle = as5600_pitch.getMechanicalAngle();
+  // float mechanicalAngle = as5600_pitch.getMechanicalAngle();
   
   float electricalAngle = as5600_pitch.getElectricalAngle();
 
   motor0.move(electricalAngle);
+
+  electrical += 1.5;
+
+  delay(10);
 
   //display the angle and the angular velocity to the terminal
   // Serial3.print(mechanicalAngle);

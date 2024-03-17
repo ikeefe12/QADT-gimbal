@@ -34,7 +34,7 @@ public:
 private:
     uint32_t pins[NUM_OF_PINS] = {0, 0, 0}; // motor0 pins
     uint32_t channels[NUM_OF_PINS] = {0, 0, 0};
-    uint32_t dutyCycles[NUM_OF_PINS] = { 65535, 0, 0 }; // Initial duty cycles
+    uint32_t dutyCycles[NUM_OF_PINS] = { 0, 49151,  49151}; // Initial duty cycles
     HardwareTimer* timers[NUM_OF_PINS];
-    static constexpr uint32_t maximumPWMDutyCycle = 65535; // Adjust this value based on your PWM resolution
+    static constexpr uint32_t maximumPWMDutyCycle = 65535; // 65535; // Adjust this value based on your PWM resolution
 };
