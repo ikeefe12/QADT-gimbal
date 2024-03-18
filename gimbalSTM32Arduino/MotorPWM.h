@@ -18,7 +18,6 @@
 
 /////////////////////////////////////////////////////
 
-extern uint32_t freq;
 extern HardwareSerial Serial3;
 
 //////////////////////////////////////////////////////
@@ -28,13 +27,13 @@ class MOTOR_PWM {
 public:
     MOTOR_PWM(uint32_t phaseAPin, uint32_t phaseBpin, uint32_t phaseCpin);
     void setup();
-    void move(float electricalAngle);
-    void updateDutyCycle(uint32_t motorIndex);
-
+    void move(float electricalAngle, bool cw);
 private:
-    uint32_t pins[NUM_OF_PINS] = {0, 0, 0}; // motor0 pins
-    uint32_t channels[NUM_OF_PINS] = {0, 0, 0};
-    uint32_t dutyCycles[NUM_OF_PINS] = { 0, 49151,  49151}; // Initial duty cycles
+    void updateDutyCycles();
+    uint32_t pins[NUM_OF_PINS]; // motor0 pins
+    uint32_t channels[NUM_OF_PINS];
+    uint32_t dutyCycles[NUM_OF_PINS]; // Initial duty cycles
     HardwareTimer* timers[NUM_OF_PINS];
+    uint32_t freq = 100000;
     static constexpr uint32_t maximumPWMDutyCycle = 65535; // 65535; // Adjust this value based on your PWM resolution
 };

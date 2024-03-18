@@ -22,7 +22,7 @@ void _delay(unsigned long ms);
  */
 unsigned long _micros();
 
-
+// ANGLE INCREASES CW 
 class  MagneticSensorI2C {
  public:
     // hard coded as both encoders use the same address

@@ -77,8 +77,6 @@ void setup()
   as5600_pitch.init(&i2c_2);
 }
 
-float electrical = 0.0;
-
 void loop()
 {
   // IMPORTANT - call as frequently as possible
@@ -88,11 +86,9 @@ void loop()
   
   float electricalAngle = as5600_pitch.getElectricalAngle();
 
-  motor0.move(electricalAngle);
+  motor0.move(electricalAngle, false);
 
-  electrical += 1.5;
-
-  delay(10);
+  // delay(1000);
 
   //display the angle and the angular velocity to the terminal
   // Serial3.print(mechanicalAngle);
