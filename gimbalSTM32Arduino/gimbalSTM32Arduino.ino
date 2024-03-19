@@ -3,52 +3,47 @@
 #include "MagneticSensorI2C.h"
 #include "MotorPWM.h"
 
-// #if !( defined(STM32F1) )
-// #error This code is designed to run on STM32F platform! Please check your Tools->Board setting.
-// #endif
+extern "C" {
+  #include "hardware/i2c.h"
+}
 
-#define LED_ON        LOW
-#define LED_OFF       HIGH
-
-#ifndef LED_0
-  #define LED_0       PB12
-#endif
-
-#ifndef LED_1
-  #define LED_1          PB13
-#endif
+// I2C PINS
+// I2C 1 is located next to LEDs on STorM32
+// I2C 1 Used for IMU and Magnetic encoder #1
+#define I2C_SCL_1 17
+#define I2C_SDA_1 16
+// I2C 2 Used for Magnetic encoder #2
+// #define I2C_SCL_2 3
+// #define I2C_SDA_2 4
 
 /////////////////////////////////////////////////
 // SERIAL / I2C
 // HardwareSerial Serial3(PA10, PA9); // RX, TX
-TwoWire i2c_1;
-TwoWire i2c_2;
+TwoWire i2c_1(i2c0, I2C_SDA_1, I2C_SCL_1);
+// TwoWire i2c_2 = TwoWire(uint32_t(I2C_SDA_2), uint32_t(I2C_SCL_2));
 int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 #define MPU_addr 0x68
 
 /////////////////////////////////////////////////
 
-// I2C PINS
-// I2C 1 is located next to LEDs on STorM32
-// I2C 1 Used for IMU and Magnetic encoder #1
-#define I2C_SCL_1 PB10
-#define I2C_SDA_1 PB11
-// I2C 2 Used for Magnetic encoder #2
-#define I2C_SCL_2 PB6
-#define I2C_SDA_2 PB7
-
 // Change the pin according to your STM32 board. There is no single definition for all boards
-#define motor0A    PA6
-#define motor0B    PA3
-#define motor0C    PA2
+#define MOTOR_PITCH_EN    9
+#define MOTOR_PITCH_A_PWM    10
+#define MOTOR_PITCH_B_PWM    11
+#define MOTOR_PITCH_C_PWM    12
 
-MOTOR_PWM motor0 = MOTOR_PWM(motor0A, motor0B, motor0C);
+MOTOR_PWM pitchMotor = MOTOR_PWM(
+  MOTOR_PITCH_EN,
+  MOTOR_PITCH_A_PWM,
+  MOTOR_PITCH_B_PWM,
+  MOTOR_PITCH_C_PWM
+);
 
 //////////////////////////////////////////////////////
 
 // SENSOR CLASSES
 MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
-MagneticSensorI2C as5600_roll = MagneticSensorI2C();
+// MagneticSensorI2C as5600_roll = MagneticSensorI2C();
 
 //////////////////////////////////////////////////////
 
@@ -57,38 +52,33 @@ MagneticSensorI2C as5600_roll = MagneticSensorI2C();
 void setup()
 {
   // INITIALIZE COMMUNICATION
-  // Serial3.begin(9600);
+  Serial.begin(9600);
 
-  // I2C communication begin with proper pins
-  i2c_1.begin(uint32_t(I2C_SDA_1), uint32_t(I2C_SCL_1));
-  i2c_2.begin(uint32_t(I2C_SDA_2), uint32_t(I2C_SCL_2));
+  // // I2C communication begin with proper pins
+  i2c_1.begin();
+  // i2c_2.begin();
 
-  motor0.setup();
-
-  pinMode(LED_0, OUTPUT);
-  pinMode(LED_1, OUTPUT);
-
-  digitalWrite(LED_0, LED_OFF);
-  digitalWrite(LED_1, LED_OFF);
+  pitchMotor.setup();
 
   delay(1000);
 
-  // Set up Encoder Sensors
-  as5600_pitch.init(&i2c_2);
+  // // Set up Encoder Sensors
+  as5600_pitch.init(&i2c_1);
 }
 
 void loop()
 {
+  Serial.println("Main Loop");
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
-  // float mechanicalAngle = as5600_pitch.getMechanicalAngle();
   
+  float mechanicalAngle = as5600_pitch.getMechanicalAngle();
   float electricalAngle = as5600_pitch.getElectricalAngle();
+  
+  Serial.println(mechanicalAngle);
 
-  motor0.move(electricalAngle, false);
-
-  // delay(1000);
+  pitchMotor.move(electricalAngle, false);
 
   //display the angle and the angular velocity to the terminal
   // Serial3.print(mechanicalAngle);
