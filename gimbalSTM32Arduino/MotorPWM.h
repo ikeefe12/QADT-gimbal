@@ -1,6 +1,6 @@
 #pragma once
 
-#define _PWM_LOGLEVEL_        3
+#define _PWM_LOGLEVEL_        0
 
 #if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
       defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED)
@@ -21,6 +21,7 @@
 
 #include "Arduino.h"
 #include "RP2040_PWM.h"
+#include "svpwm.h"
 
 #define NUM_OF_PINS   3
 
@@ -37,9 +38,10 @@ private:
     void updateDutyCycles();
     uint32_t pwmPins[NUM_OF_PINS]; // phase pwm pins
     uint32_t enPin; // phase enable pins
-    // uint32_t channels[NUM_OF_PINS];
-    float dutyCycles[NUM_OF_PINS]; // Initial duty cycles
+    tSVPWM sSVPWM = SVPWM_DEFAULTS;
+    float initialDutyCycles[NUM_OF_PINS] = {0, 75.0, 75.0f}; // Initial duty cycles
     RP2040_PWM* PWM_Instance[NUM_OF_PINS];
     float freq = 100000.0f;
-    float maximumPWMDutyCycle = 100.0f; // 65535; // Adjust this value based on your PWM resolution
+    float maximumPWMDutyCycle = 100.0f; // Adjust this value based on your PWM resolution
+    float volatageMagintude = 10.0f; // this will be set dynamically in future
 };

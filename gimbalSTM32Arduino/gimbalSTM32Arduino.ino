@@ -52,7 +52,7 @@ MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
 void setup()
 {
   // INITIALIZE COMMUNICATION
-  Serial.begin(9600);
+  // Serial.begin(9600);
 
   // // I2C communication begin with proper pins
   i2c_1.begin();
@@ -68,15 +68,15 @@ void setup()
 
 void loop()
 {
-  Serial.println("Main Loop");
+  // Serial.println("Main Loop");
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
   
   float mechanicalAngle = as5600_pitch.getMechanicalAngle();
-  float electricalAngle = as5600_pitch.getElectricalAngle();
+  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.001;
   
-  Serial.println(mechanicalAngle);
+  // Serial.println(electricalAngle);
 
   pitchMotor.move(electricalAngle, false);
 
