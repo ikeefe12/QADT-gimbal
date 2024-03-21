@@ -29,8 +29,11 @@ int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 // Change the pin according to your STM32 board. There is no single definition for all boards
 #define MOTOR_PITCH_EN    9
 #define MOTOR_PITCH_A_PWM    10
+#define MOTOR_PITCH_A_SENSE    26
 #define MOTOR_PITCH_B_PWM    11
+#define MOTOR_PITCH_B_SENSE   27
 #define MOTOR_PITCH_C_PWM    12
+// phase C current not used
 
 MOTOR_PWM pitchMotor = MOTOR_PWM(
   MOTOR_PITCH_EN,
@@ -52,7 +55,12 @@ MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
 void setup()
 {
   // INITIALIZE COMMUNICATION
-  // Serial.begin(9600);
+  delay(5000);
+
+  Serial.begin(9600);
+
+  pinMode(MOTOR_PITCH_A_SENSE, INPUT);
+  pinMode(MOTOR_PITCH_B_SENSE, INPUT);
 
   // // I2C communication begin with proper pins
   i2c_1.begin();
@@ -68,15 +76,28 @@ void setup()
 
 void loop()
 {
-  // Serial.println("Main Loop");
+  //Serial.println("Main Loop");
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
   
   float mechanicalAngle = as5600_pitch.getMechanicalAngle();
-  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.001;
+  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.01;
   
   // Serial.println(electricalAngle);
+
+  // Read the analog value from pin 26
+  int rSense0 = analogRead(MOTOR_PITCH_A_SENSE);
+  
+  // Read the analog value from pin 27
+  int rSense1 = analogRead(MOTOR_PITCH_B_SENSE);
+  
+  // Print the read values to the Serial Monitor
+  // Serial.print("RSENSE 0: ");
+  Serial.print(rSense0);
+  Serial.print(",");
+  // Serial.print("RSENSE 1: ");
+  Serial.println(rSense1);
 
   pitchMotor.move(electricalAngle, false);
 
