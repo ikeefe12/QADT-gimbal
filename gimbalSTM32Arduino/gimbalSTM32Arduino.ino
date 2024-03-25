@@ -2,6 +2,7 @@
 #include <HardwareSerial.h>
 #include "MagneticSensorI2C.h"
 #include "MotorPWM.h"
+#include "adc.h"
 
 extern "C" {
   #include "hardware/i2c.h"
@@ -52,6 +53,12 @@ MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
 
 #define PRINT_INTERVAL    10000L
 
+// Function to read from a specific ADC input (GPIO pin)
+uint16_t read_adc_for_pin(uint input) {
+    adc_select_input(input); // Select the specific ADC input
+    return adc_read(); // Perform a single conversion and return the result
+}
+
 void setup()
 {
   // INITIALIZE COMMUNICATION
@@ -59,8 +66,18 @@ void setup()
 
   Serial.begin(9600);
 
-  pinMode(MOTOR_PITCH_A_SENSE, INPUT);
-  pinMode(MOTOR_PITCH_B_SENSE, INPUT);
+  // adc_init();
+  // adc_gpio_init(MOTOR_PITCH_A_SENSE);
+  // adc_gpio_init(MOTOR_PITCH_B_SENSE);
+  // Enable round-robin sampling for GPIO pins 26 and 27
+  // adc_set_round_robin(0x03); // 0x03 is 3 in hexadecimal, representing bits 0 and 1 set.
+  // Set ADC clock divider for desired sampling rate
+  // adc_set_clkdiv(48000000.0f / 500000.0f - 1); // Example to achieve 500 kS/s
+
+  // Setup the ADC FIFO for efficient sample handling
+  // adc_fifo_setup(true, true, 3, true, false);
+
+  Serial.println("ADC INITIALIZED");
 
   // // I2C communication begin with proper pins
   i2c_1.begin();
@@ -76,7 +93,11 @@ void setup()
 
 void loop()
 {
-  //Serial.println("Main Loop");
+  // Serial.println("Main Loop");
+  // uint16_t adc_value_26 = read_adc_for_pin(0); // For GPIO 26
+  // uint16_t adc_value_27 = read_adc_for_pin(1); // For GPIO 27
+  int adc_value_26 = analogRead(MOTOR_PITCH_A_SENSE); // For GPIO 26 equivalent
+  int adc_value_27 = analogRead(MOTOR_PITCH_B_SENSE); // For GPIO 27 equivalent
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
@@ -84,20 +105,12 @@ void loop()
   float mechanicalAngle = as5600_pitch.getMechanicalAngle();
   float electricalAngle = as5600_pitch.getElectricalAngle() + 0.01;
   
-  // Serial.println(electricalAngle);
-
-  // Read the analog value from pin 26
-  int rSense0 = analogRead(MOTOR_PITCH_A_SENSE);
-  
-  // Read the analog value from pin 27
-  int rSense1 = analogRead(MOTOR_PITCH_B_SENSE);
-  
   // Print the read values to the Serial Monitor
   // Serial.print("RSENSE 0: ");
-  Serial.print(rSense0);
-  Serial.print(",");
+  // Serial.print(adc_value_26);
+  // Serial.print(",");
   // Serial.print("RSENSE 1: ");
-  Serial.println(rSense1);
+  // Serial.println(adc_value_27);
 
   pitchMotor.move(electricalAngle, false);
 
