@@ -1,8 +1,11 @@
 #include <Wire.h>
 #include <HardwareSerial.h>
-#include "MagneticSensorI2C.h"
-#include "MotorPWM.h"
-#include "adc.h"
+#include "sensors/MagneticSensorI2C.h"
+#include "sensors/MagneticSensorI2C.cpp"
+#include "sensors/CurrentSense.h"
+#include "sensors/CurrentSense.cpp"
+#include "motor_control/MotorPWM.h"
+#include "motor_control/MotorPWM.cpp"
 
 extern "C" {
   #include "hardware/i2c.h"
@@ -57,6 +60,13 @@ MOTOR_PWM rollMotor = MOTOR_PWM(
   MOTOR_ROLL_C_PWM
 );
 
+CurrentSense rollMotorCurrent = CurrentSense(
+  MOTOR_ROLL_A_SENSE,
+  MOTOR_ROLL_B_SENSE,
+  2,
+  3
+);
+
 //////////////////////////////////////////////////////
 
 // SENSOR CLASSES
@@ -67,39 +77,20 @@ MagneticSensorI2C as5600_pitch = MagneticSensorI2C();
 
 #define PRINT_INTERVAL    10000L
 
-// Function to read from a specific ADC input (GPIO pin)
-uint16_t read_adc_for_pin(uint input) {
-    adc_select_input(input); // Select the specific ADC input
-    return adc_read(); // Perform a single conversion and return the result
-}
-
 void setup()
 {
   // INITIALIZE COMMUNICATION
-  delay(5000);
-
   Serial.begin(9600);
 
-  adc_init();
-  adc_gpio_init(MOTOR_ROLL_A_SENSE);
-  adc_gpio_init(MOTOR_ROLL_B_SENSE);
-  // Enable round-robin sampling for GPIO pins 26 and 27
-  // adc_set_round_robin(0x03); // 0x03 is 3 in hexadecimal, representing bits 0 and 1 set.
-  // Set ADC clock divider for desired sampling rate
-  // adc_set_clkdiv(48000000.0f / 500000.0f - 1); // Example to achieve 500 kS/s
+  delay(1000);
 
-  // Setup the ADC FIFO for efficient sample handling
-  // adc_fifo_setup(true, true, 3, true, false);
-
-  Serial.println("ADC INITIALIZED");
-
+  rollMotorCurrent.setup();
+  
   // // I2C communication begin with proper pins
   i2c_1.begin();
   // i2c_2.begin();
 
   rollMotor.setup();
-
-  delay(5000);
   // pitchMotor.setup();
 
   delay(1000);
@@ -111,32 +102,22 @@ void setup()
 void loop()
 {
   // Serial.println("Main Loop");
-  uint16_t adc_value_28 = read_adc_for_pin(2); // For GPIO 26
-  uint16_t adc_value_29 = read_adc_for_pin(3); // For GPIO 27
-  // int adc_value_26 = analogRead(MOTOR_ROLL_A_SENSE); // For GPIO 26 equivalent
-  // int adc_value_27 = analogRead(MOTOR_ROLL_B_SENSE); // For GPIO 27 equivalent
+  
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
+  rollMotorCurrent.update();
   
   float mechanicalAngle = as5600_pitch.getMechanicalAngle();
-  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.25f;
-  
-  // Print the read values to the Serial Monitor
-  // Serial.print("RSENSE 0: ");
-  Serial.print(adc_value_28);
+
+  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.75;
+
+  Serial.print(rollMotorCurrent.ia);
   Serial.print(",");
-  // Serial.print("RSENSE 1: ");
-  Serial.println(adc_value_29);
+  Serial.println(rollMotorCurrent.ib);
 
   rollMotor.move(electricalAngle, false);
   // pitchMotor.move(electricalAngle, true);
 
-  // delay(2000);
-
-  //display the angle and the angular velocity to the terminal
-  // Serial3.print(mechanicalAngle);
-  // Serial3.print("\t");
-  // Serial3.print(electricalAngle);
-  // Serial3.print("\t\n");
+  delay(5);
 }

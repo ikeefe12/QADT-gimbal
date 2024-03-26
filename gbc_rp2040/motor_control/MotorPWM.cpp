@@ -12,6 +12,7 @@ MOTOR_PWM::MOTOR_PWM(uint32_t en, uint32_t aPWM, uint32_t bPWM, uint32_t cPWM) {
     sSVPWM.enInType = UsAng;
     sSVPWM.fUdc = 16.0f;    // set the DC-Link voltage in Volts
     sSVPWM.fUdcCCRval = maximumPWMDutyCycle; // set the Max value of counter compare register which equal to DC-Link voltage
+    sSVPWM.fUs = volatageMagintude;	// set dynamically in future - volatageMagintude
 }
 
 void MOTOR_PWM::setup() {
@@ -45,8 +46,8 @@ void MOTOR_PWM::updateDutyCycles() {
 
 // Demo purposes to make sure motor runs
 void MOTOR_PWM::move(float electricalAngle, bool cw) {
-    sSVPWM.fUs = volatageMagintude;	// set dynamically in future - volatageMagintude
-    // float offset90FromCurrent = cw ? electricalAngle + float(M_PI / 2.0) : electricalAngle - float(M_PI / 2.0);
+    // float adjustAngle = cw ? electricalAngle : -electricalAngle;
+
     // Ensure the magnitude of angle is less than 2pi
     sSVPWM.fAngRad = fmod(electricalAngle, 2.0 * M_PI);;	// set a new value of voltage Beta
     // Ensure the result is always positive

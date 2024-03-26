@@ -22,6 +22,7 @@
 #include "Arduino.h"
 #include "RP2040_PWM.h"
 #include "svpwm.h"
+#include "svpwm.c"
 
 #define NUM_OF_PINS   3
 
@@ -37,11 +38,11 @@ public:
 private:
     void updateDutyCycles();
     uint32_t pwmPins[NUM_OF_PINS]; // phase pwm pins
-    uint32_t enPin; // phase enable pins
+    uint32_t enPin; // phase enable pins`
     tSVPWM sSVPWM = SVPWM_DEFAULTS;
     float initialDutyCycles[NUM_OF_PINS] = {75.0, 0.0, 0.0}; // Initial duty cycles
     RP2040_PWM* PWM_Instance[NUM_OF_PINS];
     float freq = 100000.0f;
     float maximumPWMDutyCycle = 100.0f; // Adjust this value based on your PWM resolution
-    float volatageMagintude = 10.0f; // this will be set dynamically in future
+    float volatageMagintude = 4.0f; // this will be set dynamically in future
 };
