@@ -39,7 +39,7 @@ private:
     uint32_t pwmPins[NUM_OF_PINS]; // phase pwm pins
     uint32_t enPin; // phase enable pins
     tSVPWM sSVPWM = SVPWM_DEFAULTS;
-    float initialDutyCycles[NUM_OF_PINS] = {0, 75.0, 75.0f}; // Initial duty cycles
+    float initialDutyCycles[NUM_OF_PINS] = {75.0, 0.0, 0.0}; // Initial duty cycles
     RP2040_PWM* PWM_Instance[NUM_OF_PINS];
     float freq = 100000.0f;
     float maximumPWMDutyCycle = 100.0f; // Adjust this value based on your PWM resolution

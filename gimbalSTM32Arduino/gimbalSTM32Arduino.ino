@@ -34,6 +34,13 @@ int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 #define MOTOR_PITCH_B_PWM    11
 #define MOTOR_PITCH_B_SENSE   27
 #define MOTOR_PITCH_C_PWM    12
+
+#define MOTOR_ROLL_EN    5
+#define MOTOR_ROLL_A_PWM    6
+#define MOTOR_ROLL_A_SENSE    28
+#define MOTOR_ROLL_B_PWM    7
+#define MOTOR_ROLL_B_SENSE   29
+#define MOTOR_ROLL_C_PWM    8
 // phase C current not used
 
 MOTOR_PWM pitchMotor = MOTOR_PWM(
@@ -41,6 +48,13 @@ MOTOR_PWM pitchMotor = MOTOR_PWM(
   MOTOR_PITCH_A_PWM,
   MOTOR_PITCH_B_PWM,
   MOTOR_PITCH_C_PWM
+);
+
+MOTOR_PWM rollMotor = MOTOR_PWM(
+  MOTOR_ROLL_EN,
+  MOTOR_ROLL_A_PWM,
+  MOTOR_ROLL_B_PWM,
+  MOTOR_ROLL_C_PWM
 );
 
 //////////////////////////////////////////////////////
@@ -66,9 +80,9 @@ void setup()
 
   Serial.begin(9600);
 
-  // adc_init();
-  // adc_gpio_init(MOTOR_PITCH_A_SENSE);
-  // adc_gpio_init(MOTOR_PITCH_B_SENSE);
+  adc_init();
+  adc_gpio_init(MOTOR_ROLL_A_SENSE);
+  adc_gpio_init(MOTOR_ROLL_B_SENSE);
   // Enable round-robin sampling for GPIO pins 26 and 27
   // adc_set_round_robin(0x03); // 0x03 is 3 in hexadecimal, representing bits 0 and 1 set.
   // Set ADC clock divider for desired sampling rate
@@ -83,7 +97,10 @@ void setup()
   i2c_1.begin();
   // i2c_2.begin();
 
-  pitchMotor.setup();
+  rollMotor.setup();
+
+  delay(5000);
+  // pitchMotor.setup();
 
   delay(1000);
 
@@ -94,25 +111,28 @@ void setup()
 void loop()
 {
   // Serial.println("Main Loop");
-  // uint16_t adc_value_26 = read_adc_for_pin(0); // For GPIO 26
-  // uint16_t adc_value_27 = read_adc_for_pin(1); // For GPIO 27
-  int adc_value_26 = analogRead(MOTOR_PITCH_A_SENSE); // For GPIO 26 equivalent
-  int adc_value_27 = analogRead(MOTOR_PITCH_B_SENSE); // For GPIO 27 equivalent
+  uint16_t adc_value_28 = read_adc_for_pin(2); // For GPIO 26
+  uint16_t adc_value_29 = read_adc_for_pin(3); // For GPIO 27
+  // int adc_value_26 = analogRead(MOTOR_ROLL_A_SENSE); // For GPIO 26 equivalent
+  // int adc_value_27 = analogRead(MOTOR_ROLL_B_SENSE); // For GPIO 27 equivalent
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
   
   float mechanicalAngle = as5600_pitch.getMechanicalAngle();
-  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.01;
+  float electricalAngle = as5600_pitch.getElectricalAngle() + 0.25f;
   
   // Print the read values to the Serial Monitor
   // Serial.print("RSENSE 0: ");
-  // Serial.print(adc_value_26);
-  // Serial.print(",");
+  Serial.print(adc_value_28);
+  Serial.print(",");
   // Serial.print("RSENSE 1: ");
-  // Serial.println(adc_value_27);
+  Serial.println(adc_value_29);
 
-  pitchMotor.move(electricalAngle, false);
+  rollMotor.move(electricalAngle, false);
+  // pitchMotor.move(electricalAngle, true);
+
+  // delay(2000);
 
   //display the angle and the angular velocity to the terminal
   // Serial3.print(mechanicalAngle);
