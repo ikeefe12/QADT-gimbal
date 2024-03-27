@@ -2,8 +2,9 @@
 #include <HardwareSerial.h>
 #include "sensors/MagneticSensorI2C.h"
 #include "sensors/MagneticSensorI2C.cpp"
-#include "sensors/CurrentSense.h"
-#include "sensors/CurrentSense.cpp"
+#include "motor_control/adc.h"
+// #include "sensors/CurrentSense.h"
+// #include "sensors/CurrentSense.cpp"
 #include "motor_control/MotorPWM.h"
 #include "motor_control/MotorPWM.cpp"
 
@@ -40,32 +41,36 @@ int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 
 #define MOTOR_ROLL_EN    5
 #define MOTOR_ROLL_A_PWM    6
-#define MOTOR_ROLL_A_SENSE    28
+#define MOTOR_ROLL_SENSE_1    28
 #define MOTOR_ROLL_B_PWM    7
-#define MOTOR_ROLL_B_SENSE   29
+#define MOTOR_ROLL_SENSE_2   29
 #define MOTOR_ROLL_C_PWM    8
 // phase C current not used
 
-MOTOR_PWM pitchMotor = MOTOR_PWM(
-  MOTOR_PITCH_EN,
-  MOTOR_PITCH_A_PWM,
-  MOTOR_PITCH_B_PWM,
-  MOTOR_PITCH_C_PWM
-);
+// MOTOR_PWM pitchMotor = MOTOR_PWM(
+//   MOTOR_PITCH_EN,
+//   MOTOR_PITCH_A_PWM,
+//   MOTOR_PITCH_B_PWM,
+//   MOTOR_PITCH_C_PWM
+// );
 
 MOTOR_PWM rollMotor = MOTOR_PWM(
   MOTOR_ROLL_EN,
   MOTOR_ROLL_A_PWM,
   MOTOR_ROLL_B_PWM,
-  MOTOR_ROLL_C_PWM
-);
-
-CurrentSense rollMotorCurrent = CurrentSense(
-  MOTOR_ROLL_A_SENSE,
-  MOTOR_ROLL_B_SENSE,
+  MOTOR_ROLL_C_PWM,
+  MOTOR_ROLL_SENSE_1,
+  MOTOR_ROLL_SENSE_2,
   2,
   3
 );
+
+// CurrentSense rollMotorCurrent = CurrentSense(
+//   MOTOR_ROLL_A_SENSE,
+//   MOTOR_ROLL_B_SENSE,
+//   2,
+//   3
+// );
 
 //////////////////////////////////////////////////////
 
@@ -82,9 +87,9 @@ void setup()
   // INITIALIZE COMMUNICATION
   Serial.begin(9600);
 
-  delay(1000);
+  adc_init();
 
-  rollMotorCurrent.setup();
+  delay(1000);
   
   // // I2C communication begin with proper pins
   i2c_1.begin();
@@ -106,18 +111,21 @@ void loop()
   // IMPORTANT - call as frequently as possible
   // update the sensor values
   as5600_pitch.update();
-  rollMotorCurrent.update();
-  
-  float mechanicalAngle = as5600_pitch.getMechanicalAngle();
 
   float electricalAngle = as5600_pitch.getElectricalAngle() + 0.75;
 
-  Serial.print(rollMotorCurrent.ia);
-  Serial.print(",");
-  Serial.println(rollMotorCurrent.ib);
-
   rollMotor.move(electricalAngle, false);
+
+  for (uint8_t index = 0; index < 10; index++)
+  {
+    rollMotor.updateReadings();
+  }
+  rollMotor.updateCurrents();
   // pitchMotor.move(electricalAngle, true);
 
-  delay(5);
+  Serial.print(rollMotor.ia);
+  Serial.print(",");
+  Serial.print(rollMotor.ib);
+  Serial.print(",");
+  Serial.println(rollMotor.ic);
 }

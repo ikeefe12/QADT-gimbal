@@ -23,6 +23,7 @@
 #include "RP2040_PWM.h"
 #include "svpwm.h"
 #include "svpwm.c"
+#include "adc.h"
 
 #define NUM_OF_PINS   3
 
@@ -32,9 +33,18 @@
 
 class MOTOR_PWM {
 public:
-    MOTOR_PWM(uint32_t en, uint32_t aPWM, uint32_t bPWM, uint32_t cPWM);
+    MOTOR_PWM(uint32_t en, uint32_t aPWM, uint32_t bPWM, uint32_t cPWM, uint32_t sense1, uint32_t sense2, int index1, int index2);
     void setup();
     void move(float electricalAngle, bool cw);
+    int phase = 0; // 0 = A high, 1 = B high, 2 = C high
+    float ratioASense1 = 0.0f;
+    float ratioBSense1 = 0.0f;
+    // Current Sensing
+    void updateCurrents();
+    void updateReadings();
+    float ia = 0.0f;
+    float ib = 0.0f;
+    float ic = 0.0f;
 private:
     void updateDutyCycles();
     uint32_t pwmPins[NUM_OF_PINS]; // phase pwm pins
@@ -45,4 +55,26 @@ private:
     float freq = 100000.0f;
     float maximumPWMDutyCycle = 100.0f; // Adjust this value based on your PWM resolution
     float volatageMagintude = 4.0f; // this will be set dynamically in future
+    float normalizedSenseThreshold = 0.5 * volatageMagintude / 7.0f;
+    // Current Sensing
+    // float adc_to_current(uint16_t, uint16_t);
+    uint16_t adc_1_offset = 0;
+    uint16_t adc_2_offset = 0;
+    uint16_t adc_1_max = 485;
+    uint16_t adc_2_max = 435;
+    uint32_t sense1Pin;
+    uint32_t sense2Pin;
+    int index_1;
+    int index_2;
+    float emaSense1 = 0;
+    float emaSense2 = 0;
+    const float alpha = 0.1; // Example smoothing factor
+
+    void updateEMASense1(uint16_t currentReading) {
+      emaSense1 = alpha * (currentReading) + (1 - alpha) * emaSense1;
+    }
+
+    void updateEMASense2(uint16_t currentReading) {
+      emaSense2 = alpha * (currentReading) + (1 - alpha) * emaSense2;
+    }
 };
